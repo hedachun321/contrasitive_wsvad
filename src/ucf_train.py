@@ -512,8 +512,8 @@ if __name__ == '__main__':
         args.alpha1 = params['alpha1']
         args.alpha2 = params['alpha2']
 
-        print("Currenet alpha1:", args.alpha5)
-        print("Currenet alpha2:", args.alpha6)
+        print("Currenet alpha1:", args.alpha1)
+        print("Currenet alpha2:", args.alpha2)
 
         # 创建模型
         model = CLIPVAD(args.classes_num, args.embed_dim, args.visual_length, args.visual_width,
