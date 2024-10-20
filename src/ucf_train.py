@@ -428,72 +428,11 @@ def setup_seed(seed):
     #torch.backends.cudnn.deterministic = True
 
 if __name__ == '__main__':
-    device = "cuda" if torch.cuda.is_available() else "cpu"
     args = ucf_option.parser.parse_args()
-    setup_seed(args.seed)
-
-    label_map = dict({
-        'Normal': 'normal',
-        'Ordinary': 'ordinary', # 88.10
-        'Common': 'common', # 87.96
-
-        'Abuse': 'abuse',
-        # 'Trauma': 'trauma', # 88.16
-
-
-        'Arrest': 'arrest',
-        'Justice': 'justice',# 88.02
-        'Handcuffs': 'handcuffs',# 87.92
-
-
-        'Arson': 'arson',
-        'Fire': 'fire', # 88.13
-        'Destruction': 'destruction',# 87.99
-
-
-        'Assault': 'assault',
-        'Injury': 'injury',# 88.11
-
-        'Burglary': 'burglary',
-        'Theft': 'theft', #88.11
-        'Intrusion': 'intrusion', #88.05
-
-        'Explosion': 'explosion',
-        # 'Disaster': 'disaster',#88.22
-        'Debris': 'debris', # 88.08
-
-        'Fighting': 'fighting',
-        'Warfare': 'warfare',# 88.07
-
-        'RoadAccidents': 'roadAccidents',
-        'Vehicle Damage': 'vehicle damage',#87.73
-        'Traffic Congestion': 'traffic congestion',#87.95
-
-        # what other categories are Robbery visually similar to?
-        'Robbery': 'robbery',
-        'Shooting': 'shooting',
-        'Shoplifting': 'shoplifting',
-        'Stealing': 'stealing',
-        'Vandalism': 'vandalism',
-        'Violence': 'violence',#88.11
-        'Conflict': 'conflict',#88.05
-        'Victimization': 'victimization',#87.95
-        'MentalHealth': 'mentalHealth',#87.99
-        'PowerDynamics': 'powerDynamics',#87.73
-        'Recovery': 'recovery',#87.70
-        'Healing': 'healing'#87.70
-    })
-    normal_dataset = UCFDataset(args.visual_length, args.train_list, False, label_map, True)
-    normal_loader = DataLoader(normal_dataset, batch_size=args.batch_size, shuffle=True, drop_last=True)
-    anomaly_dataset = UCFDataset(args.visual_length, args.train_list, False, label_map, False)
-    anomaly_loader = DataLoader(anomaly_dataset, batch_size=args.batch_size, shuffle=True, drop_last=True)
-
-    test_dataset = UCFDataset(args.visual_length, args.test_list, True, label_map)
-    test_loader = DataLoader(test_dataset, batch_size=1, shuffle=False)
     # 网格搜索超参数
     param_grid = {
-        'alpha5': [0.1, 0.3, 0.5, 0.7, 0.9],
-        'alpha6': [0.1, 0.3, 0.5, 0.7, 0.9],
+        'alpha1': [0.1, 0.3, 0.5, 0.7, 0.9],
+        'alpha2': [0.1, 0.3, 0.5, 0.7, 0.9],
     }
 
     import itertools
@@ -506,19 +445,78 @@ if __name__ == '__main__':
     best_params = None
 
     for combination in combinations:
+
+        device = "cuda" if torch.cuda.is_available() else "cpu"
+
+        setup_seed(args.seed)
+
+        label_map = dict({
+            'Normal': 'normal',
+            'Ordinary': 'ordinary',  # 88.10
+            'Common': 'common',  # 87.96
+
+            'Abuse': 'abuse',
+            # 'Trauma': 'trauma', # 88.16
+
+            'Arrest': 'arrest',
+            'Justice': 'justice',  # 88.02
+            'Handcuffs': 'handcuffs',  # 87.92
+
+            'Arson': 'arson',
+            'Fire': 'fire',  # 88.13
+            'Destruction': 'destruction',  # 87.99
+
+            'Assault': 'assault',
+            'Injury': 'injury',  # 88.11
+
+            'Burglary': 'burglary',
+            'Theft': 'theft',  # 88.11
+            'Intrusion': 'intrusion',  # 88.05
+
+            'Explosion': 'explosion',
+            # 'Disaster': 'disaster',#88.22
+            'Debris': 'debris',  # 88.08
+
+            'Fighting': 'fighting',
+            'Warfare': 'warfare',  # 88.07
+
+            'RoadAccidents': 'roadAccidents',
+            'Vehicle Damage': 'vehicle damage',  # 87.73
+            'Traffic Congestion': 'traffic congestion',  # 87.95
+
+            # what other categories are Robbery visually similar to?
+            'Robbery': 'robbery',
+            'Shooting': 'shooting',
+            'Shoplifting': 'shoplifting',
+            'Stealing': 'stealing',
+            'Vandalism': 'vandalism',
+            'Violence': 'violence',  # 88.11
+            'Conflict': 'conflict',  # 88.05
+            'Victimization': 'victimization',  # 87.95
+            'MentalHealth': 'mentalHealth',  # 87.99
+            'PowerDynamics': 'powerDynamics',  # 87.73
+            'Recovery': 'recovery',  # 87.70
+            'Healing': 'healing'  # 87.70
+        })
+        normal_dataset = UCFDataset(args.visual_length, args.train_list, False, label_map, True)
+        normal_loader = DataLoader(normal_dataset, batch_size=args.batch_size, shuffle=True, drop_last=True)
+        anomaly_dataset = UCFDataset(args.visual_length, args.train_list, False, label_map, False)
+        anomaly_loader = DataLoader(anomaly_dataset, batch_size=args.batch_size, shuffle=True, drop_last=True)
+
+        test_dataset = UCFDataset(args.visual_length, args.test_list, True, label_map)
+        test_loader = DataLoader(test_dataset, batch_size=1, shuffle=False)
+
         params = dict(zip(keys, combination))
 
         # 更新 args 中的参数
-        args.alpha5 = params['alpha5']
-        args.alpha6 = params['alpha6']
+        args.alpha1 = params['alpha1']
+        args.alpha2 = params['alpha2']
 
         # 创建模型
         model = CLIPVAD(args.classes_num, args.embed_dim, args.visual_length, args.visual_width,
                         args.visual_head, args.visual_layers, args.attn_window,
                         args.prompt_prefix, args.prompt_postfix, device)
 
-        print("currenet alpha5:", args.alpha5)
-        print("currenet alpha6:", args.alpha6)
 
         # 训练模型并获取评分
         ap_best = train(model, normal_loader, anomaly_loader, test_loader, args, label_map, device)
@@ -526,6 +524,10 @@ if __name__ == '__main__':
         if ap_best > best_score:
             best_score = ap_best
             best_params = params
+
+        print("Currenet alpha5:", args.alpha5)
+        print("Currenet alpha6:", args.alpha6)
+        print("currenet Best Auc:", best_score)
 
     print("Best Score:", best_score)
     print("Best Params:", best_params)
