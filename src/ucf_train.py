@@ -528,8 +528,8 @@ if __name__ == '__main__':
             best_score = ap_best
             best_params = params
 
-        print("Currenet alpha1:", args.alpha5)
-        print("Currenet alpha2:", args.alpha6)
+        print("Currenet alpha1:", args.alpha1)
+        print("Currenet alpha2:", args.alpha2)
         print("currenet Best Auc:", best_score)
 
     print("Best Score:", best_score)
