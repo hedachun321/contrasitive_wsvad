@@ -512,6 +512,9 @@ if __name__ == '__main__':
         args.alpha1 = params['alpha1']
         args.alpha2 = params['alpha2']
 
+        print("Currenet alpha1:", args.alpha5)
+        print("Currenet alpha2:", args.alpha6)
+
         # 创建模型
         model = CLIPVAD(args.classes_num, args.embed_dim, args.visual_length, args.visual_width,
                         args.visual_head, args.visual_layers, args.attn_window,
@@ -525,8 +528,8 @@ if __name__ == '__main__':
             best_score = ap_best
             best_params = params
 
-        print("Currenet alpha5:", args.alpha5)
-        print("Currenet alpha6:", args.alpha6)
+        print("Currenet alpha1:", args.alpha5)
+        print("Currenet alpha2:", args.alpha6)
         print("currenet Best Auc:", best_score)
 
     print("Best Score:", best_score)
