@@ -492,8 +492,8 @@ if __name__ == '__main__':
     test_loader = DataLoader(test_dataset, batch_size=1, shuffle=False)
     # 网格搜索超参数
     param_grid = {
-        'alpha5': [0.3],
-        'alpha6': [0.3],
+        'alpha5': [0.1, 0.3, 0.5, 0.7, 0.9],
+        'alpha6': [0.1, 0.3, 0.5, 0.7, 0.9],
     }
 
     import itertools
@@ -516,6 +516,9 @@ if __name__ == '__main__':
         model = CLIPVAD(args.classes_num, args.embed_dim, args.visual_length, args.visual_width,
                         args.visual_head, args.visual_layers, args.attn_window,
                         args.prompt_prefix, args.prompt_postfix, device)
+
+        print("currenet alpha5:", args.alpha5)
+        print("currenet alpha6:", args.alpha6)
 
         # 训练模型并获取评分
         ap_best = train(model, normal_loader, anomaly_loader, test_loader, args, label_map, device)
