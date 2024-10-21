@@ -183,6 +183,49 @@ def CLAS4(logits, labels, lengths, device, args):
 
     return total_loss
 
+def CLAS5(logits, labels, lengths, device, args):
+    # 初始化标签和 logits
+    labels = 1 - labels[:, 0].reshape(labels.shape[0]).to(device)  # 转换标签
+    logits = torch.sigmoid(logits).reshape(logits.shape[0], logits.shape[1])  # [batch, length]
+
+    batch_size = logits.shape[0]
+    half_batch_size = batch_size // 2
+
+    # 存储损失
+    normal_loss = torch.zeros(half_batch_size).to(device)
+    abnormal_loss = torch.zeros(half_batch_size).to(device)
+    topk_loss = torch.zeros(half_batch_size).to(device)
+
+    for i in range(batch_size):
+        valid_length = lengths[i]  # 当前视频的有效长度
+        k = int(valid_length / 16 + 1)  # top-k 片段数量
+
+        # 计算平均 logits
+        logits_mean = torch.mean(logits[i, :valid_length])
+
+        if i < half_batch_size:
+            # **正常视频**：与标签 0 计算交叉熵
+            normal_loss[i] = F.binary_cross_entropy(logits_mean, torch.tensor(0.0).to(device))
+        else:
+            # **异常视频**整体：与标签 0 计算交叉熵
+            abnormal_loss[i - half_batch_size] = F.binary_cross_entropy(logits_mean, torch.tensor(0.0).to(device))
+
+            # **Top-k 异常片段**：与标签 1 计算交叉熵
+            topk_values, _ = torch.topk(logits[i, :valid_length], k=k, largest=True)
+            topk_mean = torch.mean(topk_values)
+            topk_loss[i - half_batch_size] = F.binary_cross_entropy(topk_mean, torch.tensor(1.0).to(device))
+
+    # 计算平均损失
+    normal_loss_mean = normal_loss.mean()
+    abnormal_loss_mean = abnormal_loss.mean()
+    topk_loss_mean = topk_loss.mean()
+
+    # 计算约束损失：normal_loss < abnormal_loss < topk_loss
+    constraint_1 = F.relu(normal_loss_mean - abnormal_loss_mean + args.alpha1)  # 正常 < 异常
+    constraint_2 = F.relu(abnormal_loss_mean - topk_loss_mean + args.alpha2)  # 异常 < top-k
+
+    # 返回约束损失的总和
+    return constraint_1 + constraint_2
 
 
 
@@ -386,6 +429,7 @@ def train(model, normal_loader, anomaly_loader, testloader, args, label_map, dev
             # loss_total4 += loss4.item()
 
             loss2 = CLAS4(logits1, text_labels, feat_lengths, device, args)
+            loss_total2 += loss2.item()
 
             loss = loss1 + nmloss * 10 + loss2
 
@@ -394,7 +438,7 @@ def train(model, normal_loader, anomaly_loader, testloader, args, label_map, dev
             optimizer.step()
             step += i * normal_loader.batch_size * 2
             if step % 1280 == 0 and step != 0:
-                print('epoch: ', e+1, '| step: ', step, '| loss1: ', loss_total1 / (i+1))
+                print('epoch: ', e+1, '| step: ', step, '| loss1: ', loss_total1 / (i+1), '| loss2: ', loss_total2 / (i+1))
                 AUC, AP = test(model, testloader, args.visual_length, prompt_text, gt, gtsegments, gtlabels, device)
                 AP = AUC
 
@@ -528,9 +572,8 @@ if __name__ == '__main__':
             best_score = ap_best
             best_params = params
 
-        print("Currenet alpha1:", args.alpha1)
-        print("Currenet alpha2:", args.alpha2)
-        print("currenet Best Auc:", best_score)
+        print("Currenet Best Params:", best_params)
+        print("Currenet Best Auc:", best_score)
 
     print("Best Score:", best_score)
     print("Best Params:", best_params)
